@@ -532,5 +532,122 @@ python src/evaluate.py
 > **Note:** Both reconstruction files already exist with complete data. Do not re-run Steps 2–3 unless you have changed the prompts or prompt templates. Re-running at `t=0.7` will produce different outputs due to stochasticity, making the existing results incomparable.
 
 ---
+# SECTION 6 — Evaluation (COMPLETE)
 
-*This document was produced as an internal handoff. All design decisions, failures, and data characteristics described here are grounded in the actual files in the repository. No information has been assumed or fabricated.*
+`src/evaluate.py` is now fully implemented. It computes the following metrics across both temperature files and saves results to `results/evaluation_results.csv`.
+
+### Metrics computed per row
+| Column | Description |
+|---|---|
+| rouge1_t0 / rouge1_t07 | ROUGE-1 F1 between original prompt and reconstruction |
+| rougeL_t0 / rougeL_t07 | ROUGE-L F1 between original prompt and reconstruction |
+| bert_f1_t0 / bert_f1_t07 | BERTScore F1 between original prompt and reconstruction |
+| bert_f1_recon_vs_output | BERTScore F1 between reconstruction and advice output (critical diagnostic) |
+| kw_recall_t0 / kw_recall_t07 | Keyword recall — fraction of content words from original prompt found in reconstruction |
+| len_ratio_t0 / len_ratio_t07 | Word count of reconstruction divided by word count of original |
+| t0_t07_overlap | Jaccard overlap between t=0 and t=0.7 reconstructions of the same row |
+
+### Dependencies required
+```bash
+pip install rouge-score bert-score
+```
+
+### How to run
+```bash
+python src/evaluate.py
+```
+**Do not re-run unless data files have changed. BERTScore downloads RoBERTa-large on first run (~1.4GB) and takes 3-5 minutes. The warnings about UNEXPECTED/MISSING keys during BERTScore loading are normal and can be ignored — they are artefacts of loading a pretrained model for a different task and do not affect scores.**
+
+---
+
+## 6.2 Why Human Annotation Was Dropped
+
+The original README specified human annotation on 20 rows using a 0-16 rubric across four dimensions. This was not conducted for the following methodological reason:
+
+Automated metrics reveal that the reconstruction pipeline operates primarily as advice compression rather than genuine prompt inversion — BERTScore between reconstruction and original prompt (0.890) and between reconstruction and advice output (0.867) differ by only 0.023. Given this finding, human fluency evaluation would not address the core limitation identified. A reconstruction can read as natural and plausible while still failing to recover the original prompt's specific situational content. Rubric-based fluency scoring would therefore flatter the system without measuring what matters. The automated metrics — particularly the BERTScore diagnostic and keyword recall — provide a more honest and more rigorous characterisation of system performance than subjective fluency scoring would.
+
+This decision is documented here for transparency and should be explicitly addressed in the write-up's methodology section.
+
+---
+
+## 6.3 Full Results
+
+### Overall means
+| Metric | t=0 | t=0.7 |
+|---|---|---|
+| ROUGE-1 | 0.340 | 0.336 |
+| ROUGE-L | 0.217 | 0.214 |
+| BERTScore vs prompt | 0.890 | 0.889 |
+| Keyword recall | 0.265 | 0.260 |
+| Length ratio | 1.663 | 1.652 |
+
+### Critical diagnostic
+| Comparison | BERTScore |
+|---|---|
+| Reconstruction vs original prompt | 0.890 |
+| Reconstruction vs advice output | 0.867 |
+| Gap | 0.023 |
+
+### By style
+| Style | BERTScore t0 | Keyword recall t0 | Length ratio t0 |
+|---|---|---|---|
+| Openness | 0.890 | 0.284 | 1.693 |
+| Conscientiousness | 0.890 | 0.246 | 1.633 |
+
+### By level
+| Level | BERTScore t0 | Keyword recall t0 | Length ratio t0 |
+|---|---|---|---|
+| High | 0.891 | 0.279 | 1.688 |
+| Low | 0.888 | 0.245 | 1.626 |
+
+### By topic (BERTScore t0 / keyword recall t0)
+| Topic | BERTScore | Keyword recall |
+|---|---|---|
+| Friendship & Social Circles | 0.896 | 0.343 |
+| Family Dynamics | 0.893 | 0.284 |
+| Digital & Social Media | 0.888 | 0.238 |
+| Relationship | 0.887 | 0.216 |
+| Workplace Sabotage | 0.885 | 0.244 |
+
+### Jaccard t=0 vs t=0.7
+| | Value |
+|---|---|
+| Mean overlap | 0.503 |
+| Min | 0.196 |
+| Max | 0.981 |
+| Rows with overlap < 0.30 | 3 |
+
+---
+
+## 6.4 Interpretation of Results — Key Findings for the Report
+
+### Finding 1 — Compression not inversion (central finding)
+The BERTScore gap between reconstruction vs prompt (0.890) and reconstruction vs advice output (0.867) is only 0.023. This is within noise range for BERTScore and means the reconstruction is almost equally similar to the input it was given as to the target it was supposed to recover. The model is paraphrasing the advice text, not reversing the generation process. This finding undermines the headline metric of 0.890 as evidence of successful prompt recovery — a system that simply summarises the advice output would score similarly.
+
+### Finding 2 — BERTScore flatters, keyword recall is honest
+Keyword recall at 0.265 against BERTScore at 0.890 is the most important internal comparison. The model captures emotional register and general topic (high semantic similarity) but loses specific situational facts (low keyword recall). This reflects a fundamental property of advice discourse: advice responses abstract concrete situational details into emotional generalities, and the reconstruction follows the abstracted register rather than recovering the original specifics. This is a genuine linguistic finding about genre transformation.
+
+### Finding 3 — Temperature is irrelevant
+BERTScore difference between t=0 and t=0.7 is 0.001 despite Jaccard overlap of only 0.503. Half the vocabulary changes but quality does not move. Temperature affects surface lexical choice, not semantic recovery. The ceiling is set by information available in the advice text, not by decoding strategy.
+
+### Finding 4 — Personality conditioning had no detectable effect
+All style and level conditions fall within 0.003 BERTScore. Either the Big Five conditioning did not produce sufficiently distinct outputs for the reconstructor to detect, or the reconstruction ignores stylistic signal regardless of how the advice was written. The data cannot distinguish between these explanations. Both are worth naming in the write-up.
+
+### Finding 5 — Systematic over-elaboration
+Length ratio 1.663 consistently across every condition. Reconstructions average 77 words against original prompts averaging 46. The Reverse_prompt instructs 2-3 sentences but the model produces 3-5. The model infers and adds emotional backstory not present in the source prompt — consistent with the compression hypothesis. This is a quantifiable and consistent bias.
+
+### Finding 6 — Topic variation exists but should not be overclaimed
+Friendship reconstructs best (keyword recall 0.343), Relationship worst (0.216). Workplace Sabotage has lowest BERTScore (0.885). With n=10 per topic these are directional observations only. Report them as patterns, not robust findings.
+---
+
+## 6.6 Files Produced by Evaluation
+
+| File | Description |
+|---|---|
+| results/evaluation_results.csv | Full 50-row results table with all metrics |
+| src/evaluate.py | Complete evaluation script |
+
+### Column schema of evaluation_results.csv
+id, style, level, topic, rouge1_t0, rouge1_t07, rougeL_t0, rougeL_t07, bert_f1_t0, bert_f1_t07, bert_f1_recon_vs_output, kw_recall_t0, kw_recall_t07, len_ratio_t0, len_ratio_t07, t0_t07_overlap, human_score_t0 (empty), human_score_t07 (empty), error_type_t0 (empty), error_type_t07 (empty)
+
+The human_score and error_type columns are empty by design- see Section 6.2 for rationale.
