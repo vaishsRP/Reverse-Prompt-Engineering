@@ -40,7 +40,7 @@ Input:
 """
 
 
-Reverse_prompt = Reverse_prompt = """You are an expert linguistic analyst with deep knowledge of how humans and AI systems produce language. You will receive a piece of advice text. Your job is to reconstruct the most plausible prompt a real person in need would have written to receive this advice.
+Reverse_prompt = """You are an expert linguistic analyst with deep knowledge of how humans and AI systems produce language. You will receive a piece of advice text. Your job is to reconstruct the most plausible prompt a real person in need would have written to receive this advice.
 
 You are not reconstructing a system prompt or an engineered instruction — you are reconstructing a genuine human moment.
 

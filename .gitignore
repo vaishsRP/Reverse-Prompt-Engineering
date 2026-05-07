@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 venv/
 .venv/
-results/
 .DS_Store
 NLP_2026_A3.pdf
+.env.example
+NLP_assignment3.pdf

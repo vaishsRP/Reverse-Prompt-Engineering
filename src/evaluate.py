@@ -1,6 +1,4 @@
 import pandas as pd
-print(pd.read_csv('data/reconstructions_t0.csv').shape)
-import pandas as pd
 import numpy as np
 import re
 import json
@@ -79,17 +77,10 @@ for _, row in merged.iterrows():
         "len_ratio_t0":  round(word_count(recon_t0) / max(word_count(original), 1), 4),
         "len_ratio_t07": round(word_count(recon_t07) / max(word_count(original), 1), 4),
         "t0_t07_overlap": round(jaccard(recon_t0, recon_t07), 4),
-        # placeholders for human annotation — fill manually
-        "human_score_t0":  None,
-        "human_score_t07": None,
-        "error_type_t0":   None,
-        "error_type_t07":  None,
     })
 
 results_df = pd.DataFrame(results)
 
-# ── BERTScore ──────────────────────────────────────────────────────────────────
-# Run separately because it loads a model — slow but only runs once
 print("Running BERTScore t0...")
 _, _, F1_t0 = bert_score_fn(
     list(results_df["id"].map(dict(zip(merged["id"], merged["reconstructed_prompt_t0"])))),
@@ -109,7 +100,6 @@ _, _, F1_t07 = bert_score_fn(
 results_df["bert_f1_t0"]  = np.round(F1_t0.numpy(), 4)
 results_df["bert_f1_t07"] = np.round(F1_t07.numpy(), 4)
 
-# ── BERTScore reconstruction vs output ──────────────────────────────────
 print("Running BERTScore reconstruction vs output...")
 _, _, F1_recon_vs_output = bert_score_fn(
     list(results_df["id"].map(dict(zip(merged["id"], merged["reconstructed_prompt_t0"])))),
@@ -120,13 +110,13 @@ _, _, F1_recon_vs_output = bert_score_fn(
 
 results_df["bert_f1_recon_vs_output"] = np.round(F1_recon_vs_output.numpy(), 4)
 
-# ── Save ───────────────────────────────────────────────────────────────────────
+
 import os
 os.makedirs("results", exist_ok=True)
 results_df.to_csv("results/evaluation_results.csv", index=False)
 print("Saved results/evaluation_results.csv")
 
-# ── Summary stats ──────────────────────────────────────────────────────────────
+
 metrics = ["rouge1", "rougeL", "bert_f1", "kw_recall", "len_ratio"]
 print("\n── Overall means ──")
 for m in metrics:
