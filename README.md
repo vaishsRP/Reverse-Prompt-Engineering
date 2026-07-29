@@ -3,14 +3,12 @@
 **NLP Assignment 3 — VU Amsterdam 2026**  
 Priyanshi Dhillon · Shithik Shaji · Vaishanavi Mehta
 
-> This is my fork of our three-person group project (original repo:
-> [PriyanshiDhillon/Reverse-Prompt-Engineering](https://github.com/PriyanshiDhillon/Reverse-Prompt-Engineering)).
-> My main contribution was the **diagnostic reconstruction-vs-output
-> BERTScore** — the metric that distinguishes genuine prompt inversion
-> from mere paraphrase, and that produced the project's central finding
-> (the 0.023 diagnostic gap) — along with parts of the evaluation and
-> this documentation. Pipeline structure and generation stages were
-> team efforts led by my collaborators.
+This is my fork of our three-person group project (original repo:
+[PriyanshiDhillon/Reverse-Prompt-Engineering](https://github.com/PriyanshiDhillon/Reverse-Prompt-Engineering)).
+My main contribution was the reconstruction-vs-output BERTScore
+diagnostic, the metric behind the project's central finding (the 0.023
+gap), plus parts of the evaluation and this write-up. The pipeline and
+generation stages were built together as a team.
 
 ---
 
